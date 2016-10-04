@@ -8,6 +8,7 @@
 #include <opencv2\core\core.hpp>
 #include <opencv2\highgui\highgui.hpp>
 #include <opencv2\opencv.hpp>
+#include <opencv2\imgproc\imgproc.hpp>
 
 int main(){
 	/*
@@ -18,13 +19,14 @@ int main(){
 	}
 	*/
 
-	//variable
-	cv::Mat inMat = cv::imread("IMGP0518.JPG");	//image input
+	//--variable--//
+	cv::Mat inMat = cv::imread("sample.jpg");	//image input
 	cv::Mat hsvMat;
 	const int height = inMat.rows;
 	const int width = inMat.cols;
 	short *dst = new short[width*height]; //labeling
-	cv::Mat outMat(height, width, CV_8UC3); //image ouput
+	cv::Mat outMat = cv::Mat(cv::Size(width, height), CV_8UC1); //image ouput
+	uchar hue, sat, val;
 
 	cv::imshow("input", inMat);
 	cv::waitKey(0);
@@ -33,21 +35,27 @@ int main(){
 	cv::imshow("hsv", hsvMat);
 	cv::waitKey(0);
 
+	//--yellow detection--//
 	for (int y = 0; y < height; y++){
 		for (int x = 0; x < width; x++){
-			int index = hsvMat.step*y + (x * 3);
-			if (hsvMat.data[index] >= 50 &&
-				hsvMat.data[index] <= 70 &&
-				hsvMat.data[index + 1] >= 90 &&
-				hsvMat.data[index + 2] >= 90)
-			{
-				outMat.data[index] = hsvMat.data[index];
-				outMat.data[index + 1] = hsvMat.data[index + 1];
-				outMat.data[index + 2] = hsvMat.data[index + 2];
-			}
+			//--HSV--//
+			hue = hsvMat.at<cv::Vec3b>(y, x)[0];
+			sat = hsvMat.at<cv::Vec3b>(y, x)[1];
+			val = hsvMat.at<cv::Vec3b>(y, x)[2];
+			//--threshold--//
+			if (hue < 40 && sat < 80 && val > 230)
+				outMat.at<uchar>(y, x) = 0;
+			else 
+				outMat.at<uchar>(y, x) = 255;
 		}
 	}
-	cv::imshow("output", outMat);
+
+	//--namber detection--//
+	cv::Mat bil = cv::Mat(cv::Size(width, height), CV_8UC1);
+	cv::bilateralFilter(outMat, bil, 20, 90, 200);
+	cv::imwrite("ouMat.jpg", bil);
+
+	//cv::imshow("output", bil);
 	cv::waitKey(0);
 	return 0;
 }
